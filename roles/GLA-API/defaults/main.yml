@@ -31,13 +31,13 @@ glance_api_vip: "{{ GLA_API.advertises.vips.private[0].url }}"
 # glance-api.conf
 ## [DEFAULT]
 glance_api_paste_config: "{{ glance_service_conf_dir }}/api-paste.ini"
-glance_data_api: "glance.db.registry.api"
 glance_api_log_file: "{{ log_dir }}/glance-api.log"
 glance_api_log_json_file: "{{ log_dir }}/glance-api-json.log"
 
-## Registry
-glance_registry_host: "{{ GLA_API.consumes_GLA_REG.vips.private[0].host }}"
-glance_registry_client_protocol: "{{ GLA_API.consumes_GLA_REG.vips.private[0].protocol }}"
+## [database]
+ca_file: "{{ trusted_ca_bundle }}"
+db_ssl: "{% if GLA_API.consumes_FND_MDB.vips.private[0].use_tls %}?ssl_ca={{ ca_file }}{% endif %}"
+database_connection: "mysql+pymysql://{{ GLA_API.consumes_FND_MDB.vars.accounts.glance.username }}:{{ GLA_API.consumes_FND_MDB.vars.accounts.glance.password | urlencode }}@{{ GLA_API.consumes_FND_MDB.vips.private[0].host }}/glance{{ db_ssl }}"
 
 ## Notifications
 glance_api_notification_driver: "{{ glance_default_notification_driver }}"
@@ -50,10 +50,14 @@ glance_ses_user_name: "{{ ses_glance_user_name | default('') }}"
 glance_ses_pool_name: "{{ ses_glance_pool_name | default('') }}"
 glance_ses_ceph_conf_file_path: "{{ ses_conf_file_path | default('') }}"
 
-## Glance Store
+## Glance Store/Backend
+glance_multistore: "{{ GLA_API.vars.glance_multistore | default(False) }}"
+glance_backends: "{{ GLA_API.vars.glance_backends | default('swift:swift') }}{%- if glance_ses_enabled|bool %}, ses:rbd{% endif %}"
+glance_backends_fallback: "{%- if glance_ses_enabled|bool %}ses:rbd{% else %}swift{% endif %}"
+glance_default_backend: "{{ GLA_API.vars.glance_default_backend | default(glance_backends_fallback) }}"
 glance_stores: "{{ GLA_API.vars.glance_stores | default('swift') }}{%- if glance_ses_enabled|bool %}, glance.store.rbd.Store{% endif %}"
-glance_fallback: "{%- if glance_ses_enabled|bool %}rbd{% else %}swift{% endif %}"
-glance_default_store: "{{ GLA_API.vars.glance_default_store | default(glance_fallback) }}"
+glance_stores_fallback: "{%- if glance_ses_enabled|bool %}ses{% else %}swift{% endif %}"
+glance_default_store: "{{ GLA_API.vars.glance_default_store | default(glance_stores_fallback) }}"
 glance_store_filesystem_store_datadir: "/var/lib/glance/images"
 glance_store_swift_auth_version: "3"
 glance_store_swift_tenant_and_user: "{{glance_swift_tenant_name }}:{{ glance_swift_user }}"

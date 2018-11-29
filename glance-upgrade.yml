@@ -18,21 +18,6 @@
 - include: glance-status.yml
 - include: ses-deploy.yml
 
-- hosts: GLA-REG
-  roles:
-    - GLA-REG
-  tasks:
-  - include: roles/GLA-REG/tasks/install.yml
-
-- hosts: GLA-REG
-  roles:
-    - GLA-REG
-  tasks:
-    - include: roles/GLA-REG/tasks/configure.yml
-    - include: roles/GLA-REG/tasks/db_configure.yml
-    - include: roles/GLA-REG/tasks/reload_metadef.yml
-    - include: roles/GLA-REG/tasks/start.yml
-
 - hosts: GLA-API
   roles:
     - GLA-API
